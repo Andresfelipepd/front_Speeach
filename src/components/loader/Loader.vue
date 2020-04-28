@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <h1>load your audios</h1>
+        <h1>Cargue su archivo de audio en MP3 o WAV</h1>
       </v-col>
     </v-row>
     <v-row>
@@ -16,10 +16,10 @@
           :accept="'.mp3,.wav'"
           :maxSize="'100MB'"
           :maxFiles="1"
-          :helpText="'Choose your audio files'"
+          :helpText="'Seleccione su archivo de audio'"
           :errorText="{
-            type: 'Invalid file type. Only audio mp3 and wav files',
-            size: 'Files should not exceed 10MB in size',
+            type: 'Tipo de archivo invalido. Solamente archivos de audio mp3 y wav',
+            size: 'Los archivos no pueden exceder los 10MB',
           }"
           @select="filesSelected($event)"
           @delete="fileDeleted($event)"
