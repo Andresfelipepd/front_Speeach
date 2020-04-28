@@ -2,7 +2,8 @@
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <h1>load your audios</h1>
+        <v-img :src="require('../../assets/logo_img.png')" aspect-ratio="6"></v-img>
+        <img src="@/assets/logo_img.png" alt="" width='20%'>
       </v-col>
     </v-row>
     <v-row>
@@ -28,19 +29,22 @@
       </v-col>
     </v-row>
     <v-divider></v-divider>
-    <v-container>
+    <v-row>
       <v-col v-for="(item, i) in items" :key="i" cols="12">
         <span>{{item.transcript ? item.transcript : ''}}</span>
       </v-col>
-    </v-container>
+    </v-row>
     <v-row>
-      <v-col cols="12">
+      <v-col cols="6">
         <v-btn
           color="primary"
           :loading="loading"
-          :disabled="!fileRecordsForUpload.length"
+          :disabled="fileRecords.length == 0"
           @click="uploadFiles()"
-        >Upload {{ fileRecordsForUpload.length }} files</v-btn>
+        >Subir a la nube</v-btn>
+      </v-col>
+      <v-col cols="6">
+        <v-btn color="secondary" :disabled="this.filename.length > 5" :loading="loading" @click="fileTranscript()">Transcribir</v-btn>
       </v-col>
     </v-row>
   </v-container>
@@ -51,6 +55,7 @@
 import Vue from "vue";
 import { getToken } from "../utilitys/auth";
 import { BACKEND } from "../../globals/constans";
+import { api1 } from "../../globals/axios";
 export default Vue.extend({
   name: "Loader",
   data: () => ({
@@ -59,7 +64,8 @@ export default Vue.extend({
     fileRecords: [],
     uploadUrl: `${BACKEND}/upload`,
     uploadHeaders: { Authorization: `Bearer ${getToken()}` },
-    fileRecordsForUpload: []
+    fileRecordsForUpload: [],
+    filename: ""
   }),
   methods: {
     uploadFiles: async function() {
@@ -67,15 +73,30 @@ export default Vue.extend({
         this.$refs.vueFileAgent
           .upload(this.uploadUrl, this.uploadHeaders, this.fileRecordsForUpload)
           .then(res => {
-            this.items = res[0].data;
-            console.log(res);
-            this.fileRecordsForUpload = [];
             this.loading = false;
+            console.log(res);
           })
           .catch(error => {
             console.log(error);
             this.loading = false;
           });
+    },
+    TranscriptFiles: async function() {
+      api1({
+        method: "POST",
+        url: `/transcript`,
+        data: this.filename
+      })
+        .then(res => {
+          this.items = res[0].data;
+          this.fileRecordsForUpload = [];
+          this.loading = false;
+          this.fileRecords = [];
+        })
+        .catch(error => {
+          console.log(error);
+          this.loading = false;
+        });
     },
     deleteUploadedFile: function(fileRecord) {
       this.$refs.vueFileAgent.deleteUpload(
