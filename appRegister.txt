@@ -1,0 +1,20 @@
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.14.2/firebase-app.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyCbvbpGzLtRV45tCmMIGeBHlm-I2_t0UEE",
+    authDomain: "appsounds.firebaseapp.com",
+    databaseURL: "https://appsounds.firebaseio.com",
+    projectId: "appsounds",
+    storageBucket: "appsounds.appspot.com",
+    messagingSenderId: "295416918134",
+    appId: "1:295416918134:web:3e143963301409165c2f57"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+</script>
