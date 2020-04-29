@@ -1,9 +1,9 @@
 import axios from 'axios';
 import router from '../router/index'
-import { getToken, isAuthenticated, logout } from '../components/utilitys/auth';
 import { BACKEND } from './constans';
+import { getToken, isAuthenticated, logout } from '../components/utilitys/auth';
 
-export const api1 = axios.create({
+export const backend = axios.create({
     baseURL: BACKEND,
     headers: {
         'Authorization': `Bearer ${getToken()}`,
@@ -12,7 +12,7 @@ export const api1 = axios.create({
     }
 })
 
-api1.interceptors.request.use(function(req){
+backend.interceptors.request.use(function(req){
     if(!isAuthenticated()){
         logout();
         router.push('/');
@@ -23,7 +23,7 @@ api1.interceptors.request.use(function(req){
     return req
 })
 
-api1.interceptors.response.use(res => {
+backend.interceptors.response.use(res => {
     return res;
 }, err => {
     if(err.response){

@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <h1>Cargue su archivo de audio en MP3 o WAV</h1>
+        <h1 color="primary">Cargue su archivo de audio en MP3 o WAV</h1>
       </v-col>
     </v-row>
     <v-row>
@@ -21,104 +21,160 @@
             type: 'Tipo de archivo invalido. Solamente archivos de audio mp3 y wav',
             size: 'Los archivos no pueden exceder los 10MB',
           }"
-          @select="filesSelected($event)"
-          @delete="fileDeleted($event)"
           v-model="fileRecords"
         ></VueFileAgent>
       </v-col>
     </v-row>
     <v-divider></v-divider>
     <v-row>
+      <h3 v-if="items.length > 0">Transcripcción</h3>
       <v-col v-for="(item, i) in items" :key="i" cols="12">
-        <span>{{item.transcript ? item.transcript : ''}}</span>
+        <span>{{ item.transcript ? item.transcript : ''}}</span>
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="6">
+     <v-row>
+      <h3 v-if="items.length > 0">Resumen</h3>
+      <v-col v-for="(item, i) in items" :key="i" cols="12">
+        <span>{{ item.summary ? item.summary : ''}}</span>
+      </v-col>
+    </v-row>
+    <v-row justify="start">
+      <v-col cols="3">
         <v-btn
           color="primary"
+          width="200px"
+          outlined
+          :disabled="fileRecords.length == 0 || !valid"
           :loading="loading"
-          :disabled="fileRecords.length == 0"
-          @click="uploadFiles()"
-        >Subir a la nube</v-btn>
+          @click="uploadFile"
+        >Guardar audio</v-btn>
       </v-col>
-      <v-col cols="6">
-        <v-btn color="secondary" :disabled="this.filename.length > 5" :loading="loading" @click="fileTranscript()">Transcribir</v-btn>
+      <v-col cols="3">
+        <v-btn
+          color="accent"
+          width="200px"
+          outlined
+          :loading="loading"
+          :disabled="valid"
+          @click="fileTranscript"
+        >Transcribir</v-btn>
       </v-col>
     </v-row>
+    <Alert :show="alert" />
   </v-container>
 </template>
 
 <script lang="ts">
 /* eslint-disable */
+
 import Vue from "vue";
-import { getToken } from "../utilitys/auth";
-import { BACKEND } from "../../globals/constans";
-import { api1 } from "../../globals/axios";
+import Alert from "../utilitys/Alert.vue";
+import { getName } from "../utilitys/auth";
+import { backend } from "../../globals/axios";
+import { FileRecord } from "vue-file-agent";
 export default Vue.extend({
   name: "Loader",
+  components: {
+    Alert
+  },
   data: () => ({
     loading: false,
     items: [],
+    valid:true,
     fileRecords: [],
-    uploadUrl: `${BACKEND}/upload`,
-    uploadHeaders: { Authorization: `Bearer ${getToken()}` },
-    fileRecordsForUpload: [],
-    filename: ""
+    alert: {
+      icon: null,
+      show: false,
+      text: null,
+      color: null
+    }
   }),
   methods: {
-    uploadFiles: async function() {
-      (this.loading = true),
-        this.$refs.vueFileAgent
-          .upload(this.uploadUrl, this.uploadHeaders, this.fileRecordsForUpload)
-          .then(res => {
-            this.loading = false;
-            console.log(res);
-          })
-          .catch(error => {
-            console.log(error);
-            this.loading = false;
-          });
-    },
-    TranscriptFiles: async function() {
-      api1({
-        method: "POST",
-        url: `/transcript`,
-        data: this.filename
+    validate: async function() {
+      backend({
+        method: "GET",
+        url: `/validate?speach=${this.fileRecords[0]}`,
       })
         .then(res => {
-          this.items = res[0].data;
-          this.fileRecordsForUpload = [];
-          this.loading = false;
-          this.fileRecords = [];
+          this.valid = res.data
         })
         .catch(error => {
-          console.log(error);
+          this.alert = {
+            icon: "mdi-alert-outline",
+            show: true,
+            text: error.data,
+            color: "error"
+          };
+        });
+    },
+    uploadFile: async function() {
+      this.loading = true;
+      let fd = new FormData();
+      fd.append("file", this.fileRecords[0].file);
+      backend({
+        method: "POST",
+        url: `/upload?user=${getName()}`,
+        data: fd
+      })
+        .then(res => {
+          this.loading = false;
+          this.alert = {
+            icon: "mdi-check-outline",
+            show: true,
+            text: res.data,
+            color: "success"
+          };
+          // this.validate();
+          this.valid = false
+        })
+        .catch(error => {
+          this.alert = {
+            icon: "mdi-alert-outline",
+            show: true,
+            text: error.data,
+            color: "error"
+          };
           this.loading = false;
         });
     },
-    deleteUploadedFile: function(fileRecord) {
-      this.$refs.vueFileAgent.deleteUpload(
-        this.uploadUrl,
-        this.uploadHeaders,
-        fileRecord
-      );
-    },
-    filesSelected: function(fileRecordsNewlySelected) {
-      var validFileRecords = fileRecordsNewlySelected.filter(
-        fileRecord => !fileRecord.error
-      );
-      this.fileRecordsForUpload = this.fileRecordsForUpload.concat(
-        validFileRecords
-      );
-    },
-    fileDeleted: function(fileRecord) {
-      var i = this.fileRecordsForUpload.indexOf(fileRecord);
-      if (i !== -1) {
-        this.fileRecordsForUpload.splice(i, 1);
-      } else {
-        this.deleteUploadedFile(fileRecord);
+    fileTranscript: async function() {
+      this.loading = true;
+      let payload = {
+        filename: this.fileRecords[0].file.name
       }
+      backend({
+        method: "POST",
+        url: "/transcript",
+        data: payload
+      })
+        .then(res => {
+          console.log(res)
+          this.alert = {
+            icon: "mdi-check-outline",
+            show: true,
+            text: res.data,
+            color: "success"
+          };
+          this.items = res.data;
+          this.loading = false;
+          this.valid = true;
+          this.fileRecords = [];
+          this.alert = {
+            icon: "mdi-check-outline",
+            show: true,
+            text: 'data transcrita correctamente',
+            color: "success"
+          };
+        })
+        .catch(error => {
+          this.loading = false;
+          this.alert = {
+            icon: "mdi-alert-outline",
+            show: true,
+            text: error.data,
+            color: "error"
+          };
+        });
     }
   }
 });
